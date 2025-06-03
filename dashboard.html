@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Map Di sản - Heritage Map</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --primary: #D2691E;
+            --primary-light: #F5DEB3;
+            --secondary: #006064;
+            --accent: #FF6F00;
+            --background: #FFFBF5;
+            --text-dark: #2D2D2D;
+            --text-light: #6D6D6D;
+        }
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--background);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+        
+        .heritage-title {
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .app-container {
+            max-width: 430px;
+            margin: 0 auto;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            background-color: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        .status-bar {
+            height: 44px;
+            background-color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 16px;
+            font-size: 14px;
+        }
+        
+        .nav-bar {
+            height: 60px;
+            background-color: white;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-width: 430px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #F0F0F0;
+            z-index: 100;
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 20%;
+            font-size: 10px;
+            color: var(--text-light);
+            transition: all 0.3s;
+        }
+        
+        .nav-item.active {
+            color: var(--primary);
+        }
+        
+        .nav-icon {
+            margin-bottom: 4px;
+            font-size: 20px;
+        }
+        
+        .search-bar {
+            background-color: #F5F5F5;
+            border-radius: 20px;
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            margin: 16px;
+        }
+        
+        .search-bar input {
+            background: transparent;
+            border: none;
+            outline: none;
+            width: 100%;
+            margin-left: 8px;
+            font-size: 14px;
+        }
+        
+        .filter-chip {
+            background-color: white;
+            border: 1px solid #E0E0E0;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 12px;
+            margin-right: 8px;
+            white-space: nowrap;
+            transition: all 0.3s;
+        }
+        
+        .filter-chip.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        .spot-card {
+            width: 200px;
+            border-radius: 16px;
+            overflow: hidden;
+            background-color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-right: 16px;
+            flex-shrink: 0;
+        }
+        
+        .spot-image {
+            height: 120px;
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .tag {
+            background-color: rgba(255,255,255,0.9);
+            border-radius: 12px;
+            padding: 4px 8px;
+            font-size: 10px;
+            margin-right: 4px;
+            color: var(--secondary);
+        }
+        
+        .plan-journey {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 16px;
+            padding: 16px;
+            margin: 16px;
+            color: white;
+        }
+        
+        .map-container {
+            position: relative;
+            height: calc(100vh - 104px);
+            background-color: #E8F5E9;
+            overflow: hidden;
+        }
+        
+        .map-overlay {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            right: 16px;
+            background-color: white;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .floating-button {
+            position: absolute;
+            bottom: 80px;
+            right: 16px;
+            width: 56px;
+            height: 56px;
+            border-radius: 28px;
+            background-color: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(210, 105, 30, 0.3);
+        }
+        
+        .filter-menu {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: white;
+            border-radius: 24px 24px 0 0;
+            padding: 24px 16px;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
+            transform: translateY(100%);
+            transition: transform 0.3s ease-out;
+            z-index: 200;
+        }
+        
+        .filter-menu.active {
+            transform: translateY(0);
+        }
+        
+        .filter-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            border: 2px solid #E0E0E0;
+            margin-right: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .checkbox.checked {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .trip-planner {
+            padding: 16px;
+        }
+        
+        .option-card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .option-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .option-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .option-chip {
+            background-color: #F5F5F5;
+            border-radius: 16px;
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+        
+        .option-chip.selected {
+            background-color: var(--primary-light);
+            color: var(--primary);
+        }
+        
+        .route-card {
+            background-color: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 16px;
+        }
+        
+        .route-image {
+            height: 160px;
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .detail-header {
+            height: 240px;
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+        
+        .detail-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            padding: 24px 16px 16px;
+            color: white;
+        }
+        
+        .detail-content {
+            padding: 16px;
+            margin-bottom: 80px;
+        }
+        
+        .detail-section {
+            margin-bottom: 24px;
+        }
+        
+        .detail-section-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .detail-section-icon {
+            margin-right: 8px;
+        }
+        
+        .action-button {
+            background-color: var(--primary);
+            color: white;
+            border-radius: 24px;
+            padding: 14px 24px;
+            font-weight: 500;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(210, 105, 30, 0.2);
+        }
+        
+        .chatbot-button {
+            position: fixed;
+            bottom: 80px;
+            right: 16px;
+            width: 56px;
+            height: 56px;
+            border-radius: 28px;
+            background-color: var(--secondary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 96, 100, 0.3);
+            z-index: 100;
+        }
+        
+        .chatbot-window {
+            position: fixed;
+            bottom: 80px;
+            right: 16px;
+            width: 300px;
+            height: 400px;
+            background-color: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transform: scale(0);
+            transform-origin: bottom right;
+            transition: transform 0.3s;
+        }
+        
+        .chatbot-window.active {
+            transform: scale(1);
+        }
+        
+        .chatbot-header {
+            background-color: var(--secondary);
+            color: white;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .chatbot-messages {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+        
+        .message {
+            margin-bottom: 12px;
+            max-width: 80%;
+        }
+        
+        .message-user {
+            background-color: #E3F2FD;
+            border-radius: 16px 16px 0 16px;
+            padding: 10px 14px;
+            margin-left: auto;
+        }
+        
+        .message-bot {
+            background-color: #F5F5F5;
+            border-radius: 16px 16px 16px 0;
+            padding: 10px 14px;
+        }
+        
+        .chatbot-input {
+            display: flex;
+            padding: 12px;
+            border-top: 1px solid #F0F0F0;
+        }
+        
+        .chatbot-input input {
+            flex: 1;
+            border: none;
+            background-color: #F5F5F5;
+            border-radius: 20px;
+            padding: 10px 16px;
+            outline: none;
+        }
+        
+        .send-button {
+            width: 36px;
+            height: 36px;
+            border-radius: 18px;
+            background-color: var(--secondary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 8px;
+        }
+        
+        .traditional-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: repeating-linear-gradient(
+                to right,
+                var(--primary) 0px,
+                var(--primary) 8px,
+                var(--primary-light) 8px,
+                var(--primary-light) 16px,
+                var(--accent) 16px,
+                var(--accent) 24px,
+                var(--secondary) 24px,
+                var(--secondary) 32px
+            );
+            opacity: 0.8;
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Map marker styles */
+        .map-marker {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50% 50% 0 50%;
+            transform: rotate(45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .map-marker::after {
+            content: '';
+            width: 12px;
+            height: 12px;
+            background-color: white;
+            border-radius: 50%;
+        }
+        
+        .map-marker.temple { background-color: #FFA000; }
+        .map-marker.food { background-color: #F44336; }
+        .map-marker.craft { background-color: #7CB342; }
+        .map-marker.art { background-color: #9C27B0; }
+        
+        /* Language toggle */
+        .language-toggle {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            color: var(--text-light);
+        }
+        
+        .language-toggle span {
+            margin: 0 4px;
+        }
+        
+        .language-toggle span.active {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Add touch-friendly styles */
+        .touch-active:active {
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        /* Improve scrolling and touch interactions */
+        .overflow-touch {
+            -webkit-overflow-scrolling: touch;
+        }
+    </style>
+</head>
+<body x-data="app()" class="bg-[var(--background)]">
+    <div class="app-container" id="app">
+        <!-- Traditional pattern border -->
+        <div class="traditional-pattern"></div>
+        
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div>9:41</div>
+            <div class="flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                </svg>
+                <svg class="ml-2" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M12.5 4a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm-4.5 3a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm8 4a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm-4.5 3a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/>
+                </svg>
+                <svg class="ml-2" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 0 1 8 14.58a31.481 31.481 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94zM8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10z"/>
+                    <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                </svg>
+                <svg class="ml-2" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M2 6a6 6 0 1 1 12 0A6 6 0 0 1 2 6zm6-3a3 3 0 0 0-3 3c0 1.677 1.343 3 3 3s3-1.323 3-3a3 3 0 0 0-3-3z"/>
+                </svg>
+            </div>
+        </div>
+        
+        <!-- Content Area -->
+        <div class="content" id="homepage">
+            <!-- Header -->
+            <div class="flex justify-between items-center px-4 pt-4">
+                <div>
+                    <h1 class="text-2xl font-bold heritage-title">Map Di sản</h1>
+                    <p class="text-sm text-gray-500">Khám phá di sản Việt Nam</p>
+                </div>
+                <div class="language-toggle">
+                    <span class="active">VI</span>
+                    <span>|</span>
+                    <span>EN</span>
+                </div>
+            </div>
+            
+            <!-- Search Bar -->
+            <div class="search-bar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+                </svg>
+                <input type="text" placeholder="Tìm kiếm theo sở thích hoặc địa điểm...">
+            </div>
+            
+            <!-- Quick Filters -->
+            <div class="px-4 mt-4">
+                <h2 class="text-sm font-semibold mb-2">Khám phá theo chủ đề</h2>
+                <div class="overflow-x-auto">
+                  
+                </div>
+            </div>
+            
+            <!-- Suggested Spots -->
+            <div class="px-4 mt-6">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-sm font-semibold">Gợi ý cho bạn</h2>
+                    <span class="text-xs text-primary">Xem tất cả</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <div class="flex py-2">
+                        <!-- Spot Card 1 -->
+                        <div class="spot-card">
+                            <div class="spot-image" style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\"https://wyndham-thanhthuy.com/wp-content/uploads/2024/08/lang-gom-bat-trang-3.jpg" width=\"200\" height=\"120\" viewBox=\"0 0 200 120\"><rect width=\"200\" height=\"120\" fill=\"%23D2691E\" opacity=\"0.2\"/><path d=\"M60,40 L100,20 L140,40 L140,80 L100,100 L60,80 Z\" fill=\"%23D2691E\" opacity=\"0.6\"/><path d=\"M80,50 L100,40 L120,50 L120,70 L100,80 L80,70 Z\" fill=\"white\" opacity=\"0.8\"/></svg>');">
+                                <div class="p-2 flex">
+                                    <span class="tag">Làng nghề</span>
+                                    <span class="tag">Truyền thống</span>
+                                </div>
+                            </div>
+                            <div class="p-3">
+                                <h3 class="font-semibold text-sm">Làng gốm Bát Tràng</h3>
+                                <p class="text-xs text-gray-500 mt-1">Làng nghề gốm sứ truyền thống hơn 700 năm tuổi</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Spot Card 2 -->
+                        <div class="spot-card">
+                            <div class="spot-image" style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"120\" viewBox=\"0 0 200 120\"><rect width=\"200\" height=\"120\" fill=\"%23006064\" opacity=\"0.2\"/><path d=\"M70,30 L100,10 L130,30 L130,90 L100,110 L70,90 Z\" fill=\"%23006064\" opacity=\"0.6\"/><path d=\"M85,50 L100,40 L115,50 L115,80 L100,90 L85,80 Z\" fill=\"white\" opacity=\"0.8\"/><path d=\"M95,20 L105,20 L105,30 L95,30 Z\" fill=\"white\" opacity=\"0.8\"/></svg>');">
+                                <div class="p-2 flex">
+                                    <span class="tag">Đền chùa</span>
+                                    <span class="tag">Tâm linh</span>
+                                </div>
+                            </div>
+                            <div class="p-3">
+                                <h3 class="font-semibold text-sm">Chùa Hương</h3>
+                                <p class="text-xs text-gray-500 mt-1">Quần thể di tích tâm linh nổi tiếng tại Hà Nội</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Spot Card 3 -->
+                        <div class="spot-card">
+                            <div class="spot-image" style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"200\" height=\"120\" viewBox=\"0 0 200 120\"><rect width=\"200\" height=\"120\" fill=\"%23FF6F00\" opacity=\"0.2\"/><path d=\"M40,80 C40,50 60,40 100,40 C140,40 160,50 160,80 L40,80 Z\" fill=\"%23FF6F00\" opacity=\"0.6\"/><circle cx=\"70\" cy=\"60\" r=\"10\" fill=\"white\" opacity=\"0.8\"/><circle cx=\"100\" cy=\"60\" r=\"10\" fill=\"white\" opacity=\"0.8\"/><circle cx=\"130\" cy=\"60\" r=\"10\" fill=\"white\" opacity=\"0.8\"/></svg>');">
+                                <div class="p-2 flex">
+                                    <span class="tag">Ẩm thực</span>
+                                    <span class="tag">Phố cổ</span>
+                                </div>
+                            </div>
+                            <div class="p-3">
+                                <h3 class="font-semibold text-sm">Phố ẩm thực Hội An</h3>
+                                <p class="text-xs text-gray-500 mt-1">Khám phá hương vị đặc trưng miền Trung</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Plan Journey -->
+            <div class="plan-journey pulse">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="font-semibold">Lên kế hoạch cho chuyến đi</h3>
+                        <p class="text-xs mt-1 opacity-80">Tạo lịch trình cá nhân với AI</p>
+                    </div>
+                    <div class="bg-white bg-opacity-20 p-2 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Discoveries -->
+            <div class="px-4 mt-6 mb-20">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-sm font-semibold">Khám phá gần đây</h2>
+                    <span class="text-xs text-primary">Xem tất cả</span>
+                </div>
+                <div class="flex flex-col">
+                    <div class="flex items-center py-3 border-b border-gray-100">
+                        <div class="w-12 h-12 rounded-lg bg-primary-light flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#D2691E" viewBox="0 0 16 16">
+                                <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2l-2.218-.887zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/>
+                            </svg>
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <h3 class="text-sm font-semibold">Phố cổ Hội An</h3>
+                            <p class="text-xs text-gray-500">Di sản văn hóa thế giới UNESCO</p>
+                        </div>
+                        <div class="text-xs text-gray-400">2 ngày trước</div>
+                    </div>
+                    
+                    <div class="flex items-center py-3 border-b border-gray-100">
+                        <div class="w-12 h-12 rounded-lg bg-primary-light flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#D2691E" viewBox="0 0 16 16">
+                                <path d="M2.97 1.35A1 1 0 0 1 3.73 1h8.54a1 1 0 0 1 .76.35l2.609 3.044A1.5 1.5 0 0 1 16 5.37v.255a2.375 2.375 0 0 1-4.25 1.458A2.371 2.371 0 0 1 9.875 8 2.37 2.37 0 0 1 8 7.083 2.37 2.37 0 0 1 6.125 8a2.37 2.37 0 0 1-1.875-.917A2.375 2.375 0 0 1 0 5.625V5.37a1.5 1.5 0 0 1 .361-.976l2.61-3.045zm1.78 4.275a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0 1.375 1.375 0 1 0 2.75 0V5.37a.5.5 0 0 0-.12-.325L12.27 2H3.73L1.12 5.045A.5.5 0 0 0 1 5.37v.255a1.375 1.375 0 0 0 2.75 0 .5.5 0 0 1 1 0zM1.5 8.5A.5.5 0 0 1 2 9v6h12V9a.5.5 0 0 1 1 0v6h.5a.5.5 0 0 1 0 1H.5a.5.5 0 0 1 0-1H1V9a.5.5 0 0 1 .5-.5zm2 .5a.5.5 0 0 1 .5.5V13h8V9.5a.5.5 0 0 1 1 0V13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5a.5.5 0 0 1 .5-.5z"/>
+                            </svg>
+                        </div>
+                        <div class="ml-3 flex-1">
+                            <h3 class="text-sm font-semibold">Chợ Bến Thành</h3>
+                            <p class="text-xs text-gray-500">Khu chợ biểu tượng của Sài Gòn</p>
+                        </div>
+                        <div class="text-xs text-gray-400">1 tuần trước</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Map Page (Hidden by default) -->
+        <div class="content hidden" id="mappage">
+            <div class="map-container">
+                <!-- Simplified Map Background -->
+                <svg width="100%" height="100%" viewBox="0 0 400 600" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Map Background -->
+                    <rect width="400" height="600" fill="#E8F5E9"/>
+                    
+                    <!-- Roads -->
+                    <path d="M0,200 L400,200" stroke="#FFFFFF" stroke-width="8"/>
+                    <path d="M0,300 L400,300" stroke="#FFFFFF" stroke-width="6"/>
+                    <path d="M0,400 L400,400" stroke="#FFFFFF" stroke-width="8"/>
+                    <path d="M100,0 L100,600" stroke="#FFFFFF" stroke-width="6"/>
+                    <path d="M200,0 L200,600" stroke="#FFFFFF" stroke-width="8"/>
+                    <path d="M300,0 L300,600" stroke="#FFFFFF" stroke-width="6"/>
+                    
+                    <!-- Water -->
+                    <path d="M250,100 Q300,150 350,100 T400,150 L400,50 L250,50 Z" fill="#B3E5FC"/>
+                    
+                    <!-- Parks -->
+                    <circle cx="150" cy="250" r="30" fill="#A5D6A7"/>
+                    <circle cx="350" cy="450" r="40" fill="#A5D6A7"/>
+                    
+                    <!-- Buildings -->
+                    <rect x="120" y="120" width="40" height="40" fill="#FFECB3"/>
+                    <rect x="320" y="220" width="30" height="30" fill="#FFECB3"/>
+                    <rect x="70" y="350" width="50" height="30" fill="#FFECB3"/>
+                    <rect x="220" y="370" width="40" height="40" fill="#FFECB3"/>
+                </svg>
+                
+                <!-- Map Markers -->
+                <div class="map-marker temple" style="top: 150px; left: 150px;"></div>
+                <div class="map-marker food" style="top: 250px; left: 320px;"></div>
+                <div class="map-marker craft" style="top: 350px; left: 100px;"></div>
+                <div class="map-marker art" style="top: 400px; left: 250px;"></div>
+                
+                <!-- Floating Filter Button -->
+                <div class="floating-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2zm1 .5v1.308l4.372 4.858A.5.5 0 0 1 7 8.5v5.306l2-.666V8.5a.5.5 0 0 1 .128-.334L13.5 3.308V2h-11z"/>
+                    </svg>
+                </div>
+                
+                <!-- Map Overlay Info Card -->
+                <div class="map-overlay">
+                    <div class="flex items-start">
+                        <div class="w-20 h-20 rounded-lg bg-primary-light flex-shrink-0" style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"80\" height=\"80\" viewBox=\"0 0 80 80\"><rect width=\"80\" height=\"80\" fill=\"%23D2691E\" opacity=\"0.2\"/><path d=\"M20,20 L40,10 L60,20 L60,50 L40,60 L20,50 Z\" fill=\"%23D2691E\" opacity=\"0.6\"/><path d=\"M30,30 L40,25 L50,30 L50,45 L40,50 L30,45 Z\" fill=\"white\" opacity=\"0.8\"/></svg>');"></div>
+                        <div class="ml-3 flex-1">
+                            <h3 class="font-semibold">Chùa Thiên Mụ</h3>
+                            <div class="flex mt-1">
+                                <span class="tag">Đền chùa</span>
+                                <span class="tag">Di tích</span>
+                            </div>
+                            <p class="text-xs text-gray-600 mt-2">Ngôi chùa cổ nhất thành phố Huế, được xây dựng từ năm 1601 với kiến trúc độc đáo.</p>
+                        </div>
+                    </div>
+                    <button class="action-button w-full mt-4">Thêm vào hành trình</button>
+                </div>
+                
+                <!-- Filter Menu -->
+                <div class="filter-menu">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-semibold">Bộ lọc</h3>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+                        </svg>
+                    </div>
+                    
+                    <div class="filter-option">
+                        <div class="checkbox checked">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="white" viewBox="0 0 16 16">
+                                <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+                            </svg>
+                        </div>
+                        <span>Đền chùa</span>
+                    </div>
+                    
+                    <div class="filter-option">
+                        <div class="checkbox checked">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="white" viewBox="0 0 16 16">
+                                <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+                            </svg>
+                        </div>
+                        <span>Ẩm thực đường phố</span>
+                    </div>
+                    
+                    <div class="filter-option">
+                        <div class="checkbox checked">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="white" viewBox="0 0 16 16">
+                                <path d="M10.97 4.97a.75.75 0 0 1 1.07 1.05l-3.99 4.99a.75.75 0 0 1-1.08.02L4.324 8.384a.75.75 0 1 1 1.06-1.06l2.094 2.093 3.473-4.425a.267.267 0 0 1 .02-.022z"/>
+                            </svg>
+                        </div>
+                        <span>Làng nghề</span>
+                    </div>
+                    
+                    <div class="filter-option">
+                        <div class="checkbox">
+                        </div>
+                        <span>Nghệ thuật truyền thống</span>
+                    </div>
+                    
+                    <div class="filter-option">
+                        <div class="checkbox">
+                        </div>
+                        <span>Tâm linh</span>
+                    </div>
+                    
+                    <div class="filter-option">
+                        <div class="checkbox">
+                        </div>
+                        <span>Lễ hội</span>
+                    </div>
+                    
+                    <div class="filter-option">
+                        <div class="checkbox">
+                        </div>
+                        <span>Di tích lịch sử</span>
+                    </div>
+                    
+                    <button class="action-button w-full mt-4">Áp dụng</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Trip Planner Page (Hidden by default) -->
+        <div class="content hidden" id="tripplanner">
+            <div class="trip-planner">
+                <h1 class="text-xl font-bold heritage-title mb-4">Lên kế hoạch cho chuyến đi</h1>
+                
+                <!-- Time Option -->
+                <div class="option-card">
+                    <div class="option-title">Thời gian</div>
+                    <div class="option-chips">
+                        <div class="option-chip">1 ngày</div>
+                        <div class="option-chip selected">2-3 ngày</div>
+                        <div class="option-chip">1 tuần</div>
+                        <div class="option-chip">2 tuần+</div>
+                    </div>
+                </div>
+                
+                <!-- Budget Option -->
+                <div class="option-card">
+                    <div class="option-title">Ngân sách</div>
+                    <div class="option-chips">
+                        <div class="option-chip">Tiết kiệm</div>
+                        <div class="option-chip selected">Vừa phải</div>
+                        <div class="option-chip">Cao cấp</div>
+                    </div>
+                </div>
+                
+                <!-- Theme Option -->
+                <div class="option-card">
+                    <div class="option-title">Chủ đề</div>
+                    <div class="option-chips">
+                        <div class="option-chip selected">Ẩm thực</div>
+                        <div class="option-chip">Thiên nhiên</div>
+                        <div class="option-chip selected">Lịch sử</div>
+                        <div class="option-chip">Làng nghề</div>
+                        <div class="option-chip">Tâm linh</div>
+                    </div>
+                </div>
+                
+                <button class="action-button w-full mt-4">Tạo hành trình</button>
+                
+                <!-- Suggested Routes -->
+                <div class="mt-8">
+                    <h2 class="text-lg font-semibold mb-4">Hành trình gợi ý</h2>
+                    
+                    <!-- Route Card -->
+                    <div class="route-card">
+                        <div class="route-image" style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"160\" viewBox=\"0 0 400 160\"><rect width=\"400\" height=\"160\" fill=\"%23D2691E\" opacity=\"0.2\"/><path d=\"M0,120 C80,100 120,140 200,120 C280,100 320,140 400,120 L400,160 L0,160 Z\" fill=\"%23D2691E\" opacity=\"0.6\"/><circle cx=\"100\" cy=\"60\" r=\"30\" fill=\"white\" opacity=\"0.3\"/><circle cx=\"300\" cy=\"40\" r=\"20\" fill=\"white\" opacity=\"0.3\"/></svg>');"></div>
+                        <div class="p-4">
+                            <h3 class="font-semibold">Hành trình khám phá ẩm thực & lịch sử Huế</h3>
+                            <div class="flex items-center text-sm text-gray-600 mt-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="mr-1">
+                                    <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                                </svg>
+                                3 ngày
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="ml-3 mr-1">
+                                    <path d="M4 10.781c.148 1.667 1.513 2.85 3.591 3.003V15h1.043v-1.216c2.27-.179 3.678-1.438 3.678-3.3 0-1.59-.947-2.51-2.956-3.028l-.722-.187V3.467c1.122.11 1.879.714 2.07 1.616h1.47c-.166-1.6-1.54-2.748-3.54-2.875V1H7.591v1.233c-1.939.23-3.27 1.472-3.27 3.156 0 1.454.966 2.483 2.661 2.917l.61.162v4.031c-1.149-.17-1.94-.8-2.131-1.718H4zm3.391-3.836c-1.043-.263-1.6-.825-1.6-1.616 0-.944.704-1.641 1.8-1.828v3.495l-.2-.05zm1.591 1.872c1.287.323 1.852.859 1.852 1.769 0 1.097-.826 1.828-2.2 1.939V8.73l.348.086z"/>
+                                </svg>
+                                1.5-2 triệu
+                            </div>
+                            <div class="flex mt-3">
+                                <span class="tag">Cung đình Huế</span>
+                                <span class="tag">Bún bò</span>
+                                <span class="tag">Chùa Thiên Mụ</span>
+                            </div>
+                            <div class="flex justify-between mt-4">
+                                <button class="text-sm font-medium text-secondary">Chỉnh sửa</button>
+                                <button class="text-sm font-medium text-primary">Lưu hành trình</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Route Card -->
+                    <div class="route-card mt-4">
+                        <div class="route-image" style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"160\" viewBox=\"0 0 400 160\"><rect width=\"400\" height=\"160\" fill=\"%23006064\" opacity=\"0.2\"/><path d=\"M0,120 C80,100 120,140 200,120 C280,100 320,140 400,120 L400,160 L0,160 Z\" fill=\"%23006064\" opacity=\"0.6\"/><circle cx=\"100\" cy=\"60\" r=\"30\" fill=\"white\" opacity=\"0.3\"/><circle cx=\"300\" cy=\"40\" r=\"20\" fill=\"white\" opacity=\"0.3\"/></svg>');"></div>
+                        <div class="p-4">
+                            <h3 class="font-semibold">Khám phá làng nghề & ẩm thực Hà Nội</h3>
+                            <div class="flex items-center text-sm text-gray-600 mt-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="mr-1">
+                                    <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                                    <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                                </svg>
+                                2 ngày
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" class="ml-3 mr-1">
+                                    <path d="M4 10.781c.148 1.667 1.513 2.85 3.591 3.003V15h1.043v-1.216c2.27-.179 3.678-1.438 3.678-3.3 0-1.59-.947-2.51-2.956-3.028l-.722-.187V3.467c1.122.11 1.879.714 2.07 1.616h1.47c-.166-1.6-1.54-2.748-3.54-2.875V1H7.591v1.233c-1.939.23-3.27 1.472-3.27 3.156 0 1.454.966 2.483 2.661 2.917l.61.162v4.031c-1.149-.17-1.94-.8-2.131-1.718H4zm3.391-3.836c-1.043-.263-1.6-.825-1.6-1.616 0-.944.704-1.641 1.8-1.828v3.495l-.2-.05zm1.591 1.872c1.287.323 1.852.859 1.852 1.769 0 1.097-.826 1.828-2.2 1.939V8.73l.348.086z"/>
+                                </svg>
+                                1-1.2 triệu
+                            </div>
+                            <div class="flex mt-3">
+                                <span class="tag">Làng gốm</span>
+                                <span class="tag">Phở cổ</span>
+                                <span class="tag">Văn Miếu</span>
+                            </div>
+                            <div class="flex justify-between mt-4">
+                                <button class="text-sm font-medium text-secondary">Chỉnh sửa</button>
+                                <button class="text-sm font-medium text-primary">Lưu hành trình</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Heritage Detail Page (Hidden by default) -->
+        <div class="content hidden" id="detailpage">
+            <div class="detail-header" style="background-image: url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"430\" height=\"240\" viewBox=\"0 0 430 240\"><rect width=\"430\" height=\"240\" fill=\"%23D2691E\" opacity=\"0.2\"/><path d=\"M100,80 L215,40 L330,80 L330,160 L215,200 L100,160 Z\" fill=\"%23D2691E\" opacity=\"0.6\"/><path d=\"M150,100 L215,80 L280,100 L280,140 L215,160 L150,140 Z\" fill=\"white\" opacity=\"0.4\"/><path d=\"M190,60 L215,50 L240,60 L240,80 L215,90 L190,80 Z\" fill=\"white\" opacity=\"0.6\"/></svg>');">
+                <div class="detail-overlay">
+                    <h1 class="text-2xl font-bold heritage-title">Làng gốm Bát Tràng</h1>
+                    <div class="flex mt-2">
+                        <span class="tag bg-white bg-opacity-20 text-white">Làng nghề</span>
+                        <span class="tag bg-white bg-opacity-20 text-white">Truyền thống</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="detail-content">
+                <!-- Audio/Video Preview -->
+                <div class="bg-gray-100 rounded-xl p-4 flex items-center">
+                    <div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="white" viewBox="0 0 16 16">
+                            <path d="m11.596 8.697-6.363 3.692c-.54.313-1.233-.066-1.233-.697V4.308c0-.63.692-1.01 1.233-.696l6.363 3.692a.802.802 0 0 1 0 1.393z"/>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium">Câu chuyện về làng gốm</h3>
+                        <p class="text-xs text-gray-500">3:45 phút</p>
+                    </div>
+                </div>
+                
+                <!-- Description -->
+                <div class="detail-section">
+                    <div class="detail-section-title">
+                        <div class="detail-section-icon text-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                            </svg>
+                        </div>
+                        Giới thiệu
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">
+                        Làng gốm Bát Tràng là một trong những làng nghề truyền thống lâu đời nhất Việt Nam, với lịch sử hơn 700 năm. Nằm bên bờ sông Hồng, cách trung tâm Hà Nội khoảng 10km, làng gốm nổi tiếng với các sản phẩm gốm sứ tinh xảo mang đậm bản sắc văn hóa Việt.
+                    </p>
+                </div>
+                
+                <!-- Cultural Info -->
+                <div class="detail-section">
+                    <div class="detail-section-title">
+                        <div class="detail-section-icon text-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2l-2.218-.887zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/>
+                            </svg>
+                        </div>
+                        Giá trị văn hóa
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">
+                        Nghề gốm Bát Tràng không chỉ là nghề thủ công mà còn là di sản văn hóa phi vật thể quý giá. Quy trình làm gốm truyền thống được lưu giữ qua nhiều thế hệ, từ việc chọn đất sét, nhào nặn, tạo hình, vẽ hoa văn đến nung sản phẩm.
+                    </p>
+                </div>
+                
+                <!-- Hours & Tips -->
+                <div class="detail-section">
+                    <div class="detail-section-title">
+                        <div class="detail-section-icon text-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 3.5a.5.5 0 0 0-1 0V9a.5.5 0 0 0 .252.434l3.5 2a.5.5 0 0 0 .496-.868L8 8.71V3.5z"/>
+                                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm7-8A7 7 0 1 1 1 8a7 7 0 0 1 14 0z"/>
+                            </svg>
+                        </div>
+                        Thời gian & Lưu ý
+                    </div>
+                    <div class="text-sm text-gray-600 mt-2">
+                        <p><strong>Giờ mở cửa:</strong> 8:00 - 17:00 hàng ngày</p>
+                        <p><strong>Thời gian lý tưởng:</strong> 2-3 giờ để tham quan và trải nghiệm</p>
+                        <p class="mt-2"><strong>Lưu ý:</strong> Nên đi vào buổi sáng để xem các nghệ nhân làm việc. Mang theo tiền mặt để mua đồ lưu niệm.</p>
+                    </div>
+                </div>
+                
+                <!-- Location -->
+                <div class="detail-section">
+                    <div class="detail-section-title">
+                        <div class="detail-section-icon text-primary">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                            </svg>
+                        </div>
+                        Vị trí
+                    </div>
+                    <div class="bg-gray-100 h-32 rounded-xl mt-2 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                        </svg>
+                        <span class="ml-2 text-sm">Xã Bát Tràng, Huyện Gia Lâm, Hà Nội</span>
+                    </div>
+                </div>
+                
+                <!-- Workshop Button -->
+                <button class="action-button w-full mt-6">Đăng ký trải nghiệm làm gốm</button>
+            </div>
+        </div>
+        
+        <!-- Navigation Bar -->
+        <div class="nav-bar">
+            <div class="nav-item active" data-page="homepage">
+                <div class="nav-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M2 13.5V7h1v6.5a.5.5 0 0 0 .5.5h9a.5.5 0 0 0 .5-.5V7h1v6.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 13.5zm11-11V6l-2-2V2.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5z"/>
+                        <path fill-rule="evenodd" d="M7.293 1.5a1 1 0 0 1 1.414 0l6.647 6.646a.5.5 0 0 1-.708.708L8 2.207 1.354 8.854a.5.5 0 1 1-.708-.708L7.293 1.5z"/>
+                    </svg>
+                </div>
+                <span>Trang chủ</span>
+            </div>
+            <div class="nav-item" data-page="mappage">
+                <div class="nav-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                    </svg>
+                </div>
+                <span>Bản đồ</span>
+            </div>
+            <div class="nav-item" data-page="tripplanner">
+                <div class="nav-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M14.5 3a.5.5 0 0 1 .5.5v9a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-9a.5.5 0 0 1 .5-.5h13zm-13-1A1.5 1.5 0 0 0 0 3.5v9A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-9A1.5 1.5 0 0 0 14.5 2h-13z"/>
+                        <path d="M3 5.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3 8a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9A.5.5 0 0 1 3 8zm0 2.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/>
+                    </svg>
+                </div>
+                <span>Hành trình</span>
+            </div>
+            <div class="nav-item" data-page="detailpage">
+                <div class="nav-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8.186 1.113a.5.5 0 0 0-.372 0L1.846 3.5l2.404.961L10.404 2l-2.218-.887zm3.564 1.426L5.596 5 8 5.961 14.154 3.5l-2.404-.961zm3.25 1.7-6.5 2.6v7.922l6.5-2.6V4.24zM7.5 14.762V6.838L1 4.239v7.923l6.5 2.6zM7.443.184a1.5 1.5 0 0 1 1.114 0l7.129 2.852A.5.5 0 0 1 16 3.5v8.662a1 1 0 0 1-.629.928l-7.185 2.874a.5.5 0 0 1-.372 0L.63 13.09a1 1 0 0 1-.63-.928V3.5a.5.5 0 0 1 .314-.464L7.443.184z"/>
+                    </svg>
+                </div>
+                <span>Khám phá</span>
+            </div>
+            <div class="nav-item">
+                <div class="nav-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4zm-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10c-2.29 0-3.516.68-4.168 1.332-.678.678-.83 1.418-.832 1.664h10z"/>
+                    </svg>
+                </div>
+                <span>Cá nhân</span>
+            </div>
+        </div>
+        
+        <!-- Chatbot Button -->
+        <div class="chatbot-button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M5 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                <path d="m2.165 15.803.02-.004c1.83-.363 2.948-.842 3.468-1.105A9.06 9.06 0 0 0 8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6a10.437 10.437 0 0 1-.524 2.318l-.003.011a10.722 10.722 0 0 1-.244.637c-.079.186.074.394.273.362a21.673 21.673 0 0 0 .693-.125zm.8-3.108a1 1 0 0 0-.287-.801C1.618 10.83 1 9.468 1 8c0-3.192 3.004-6 7-6s7 2.808 7 6c0 3.193-3.004 6-7 6a8.06 8.06 0 0 1-2.088-.272 1 1 0 0 0-.711.074c-.387.196-1.24.57-2.634.893a10.97 10.97 0 0 0 .398-2z"/>
+            </svg>
+        </div>
+        
+        <!-- Chatbot Window -->
+        <div class="chatbot-window">
+            <div class="chatbot-header">
+                <div class="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16" class="mr-2">
+                        <path d="M5 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm4 0a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                        <path d="m2.165 15.803.02-.004c1.83-.363 2.948-.842 3.468-1.105A9.06 9.06 0 0 0 8 15c4.418 0 8-3.134 8-7s-3.582-7-8-7-8 3.134-8 7c0 1.76.743 3.37 1.97 4.6a10.437 10.437 0 0 1-.524 2.318l-.003.011a10.722 10.722 0 0 1-.244.637c-.079.186.074.394.273.362a21.673 21.673 0 0 0 .693-.125zm.8-3.108a1 1 0 0 0-.287-.801C1.618 10.83 1 9.468 1 8c0-3.192 3.004-6 7-6s7 2.808 7 6c0 3.193-3.004 6-7 6a8.06 8.06 0 0 1-2.088-.272 1 1 0 0 0-.711.074c-.387.196-1.24.57-2.634.893a10.97 10.97 0 0 0 .398-2z"/>
+                    </svg>
+                    <span>Hỏi Map Di sản</span>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" width="<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'949888994251dd45',t:'MTc0ODg4MzkwNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>  <div class="flex py-2">
+                        <div class="filter-chip active">Làng nghề</div>
+                        <div class="filter-chip">Đền chùa</div>
+                        <div class="filter-chip">Ẩm thực đường phố</div>
+                        <div class="filter-chip">Nghệ thuật truyền thống</div>
+                        <div class="filter-chip">Tâm linh</div>
+                        <div class="filter-chip">Lễ hội</div>
+                    </div>
